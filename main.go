@@ -63,6 +63,7 @@ func resolve(addrtx *string) {
 		os.Exit(1)
 	}
 	*addrtx = net.JoinHostPort(addrs[0], port)
+	log.Debug().Str("ipport", *addrtx).Msgf("the address has been resolved")
 }
 func control(_, _ string, cc syscall.RawConn) error {
 	return cc.Control(func(fd uintptr) {
@@ -365,16 +366,19 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			if closed {
 				break
 			}
-			copy(readstuff[0:len(bef)], bef[0:len(bef)])
-			readstuff[len(bef)] = []byte(" ")[0]
-			log.Trace().Int("readstuffslicelen", len(readstuff[len(bef)+1:])).Msgf("wait to read udp msg")
-			n, err := uc.Read(readstuff[len(bef)+1:]) // todo ReadFrom and match addr???
+			log.Trace().Int("readstuffslicelen", len(readstuff[100+1:])).Msgf("wait to read udp msg")
+
+			n, err := uc.Read(readstuff[100+1:]) // todo ReadFrom and match addr???
+			copy(readstuff[100-len(bef):100], bef)
+			readstuff[100] = []byte(" ")[0]
+			log.Trace().Msg(string(readstuff[0:200]))
+
 			log.Trace().Msgf("read msg from udp %d %s", n, err)
 			if err != nil {
 				log.Error().Msgf("UDP LISTEN SERVER %s", err)
 				break
 			}
-			err = c.WriteMessage(websocket.BinaryMessage, readstuff[:len(bef)+1+n])
+			err = c.WriteMessage(websocket.BinaryMessage, readstuff[100-len(bef):100+1+n])
 			if err != nil {
 				log.Print("write:", err)
 				break
