@@ -352,26 +352,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 	closed := false
 	var bef []byte
-	for {
-		_, message, err := c.ReadMessage()
-		log.Trace().Msg("read msg from ws")
-		if err != nil {
-			log.Print("read:", err)
-			break
-		}
-		var after []byte
-		var found bool
-		bef, after, found = bytes.Cut(message, []byte(" "))
-		if !found {
-			log.Print("err sep not found")
-			continue
-		}
-		n, err := uc.Write(after)
-		log.Trace().Err(err).Int("len", n).Msgf("write msg to udpconn err %s", err)
 
-		//log.Printf("recv: %s %s", bef, after)
-
-	}
 	go func() { // only after first write
 		defer func() {
 			if r := recover(); r != nil {
@@ -401,6 +382,28 @@ func echo(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}()
+
+	for {
+		_, message, err := c.ReadMessage()
+		log.Trace().Msg("read msg from ws")
+		if err != nil {
+			log.Print("read:", err)
+			break
+		}
+		var after []byte
+		var found bool
+		bef, after, found = bytes.Cut(message, []byte(" "))
+		if !found {
+			log.Print("err sep not found")
+			continue
+		}
+		n, err := uc.Write(after)
+		log.Trace().Err(err).Int("len", n).Msgf("write msg to udpconn err %s", err)
+
+		//log.Printf("recv: %s %s", bef, after)
+
+	}
+
 	log.Print("CLOSING WS CONN")
 	closed = true
 	uc.Close()
