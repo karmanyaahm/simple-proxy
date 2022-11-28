@@ -306,6 +306,21 @@ func client() {
 
 	fromclient, toclient, err := listener()
 
+	go func() {
+		<-interrupt
+		log.Error().Msg("interrupt")
+
+		// Cleanly close the connection by sending a close message and then
+		// waiting (with timeout) for the server to close the connection.
+		close(toserv)
+		close(toclient)
+		//select {
+		////case _, c:=<-fromclient ; _,d:=<-tome; !(c || d):
+		//case <-time.After(time.Second):
+		//}
+		return
+	}()
+
 	for {
 		select {
 		case p := <-fromclient:
@@ -316,18 +331,7 @@ func client() {
 			log.Trace().Msg("gottome")
 			toclient <- *NewUDPMessage(p)
 			log.Trace().Msg("donetome")
-		case <-interrupt:
-			log.Error().Msg("interrupt")
 
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			close(toserv)
-			close(toclient)
-			//select {
-			////case _, c:=<-fromclient ; _,d:=<-tome; !(c || d):
-			//case <-time.After(time.Second):
-			//}
-			return
 		}
 	}
 }
